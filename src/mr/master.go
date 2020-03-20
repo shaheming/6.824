@@ -81,7 +81,6 @@ func (m *Master) GetMapTask() (string, int) {
 	}
 
 	if len(m.mT.idleTasks) > 0 {
-		// log.Printf("idle map tasks %v", m.mT.idleTasks)
 		task := m.mT.idleTasks[0]
 		m.mT.idleTasks = m.mT.idleTasks[1:]
 		newTime := new(time.Time)
@@ -89,7 +88,6 @@ func (m *Master) GetMapTask() (string, int) {
 		task.startTime = newTime
 		m.mT.inProcessTasks = append(m.mT.inProcessTasks, task)
 		task.state = 1
-		// log.Printf("idle map tasks %v", m.mT.idleTasks)
 		return task.fileName, task.taskId
 	} else {
 		return "", -1
@@ -111,12 +109,8 @@ func (m *Master) GetReduceTask() ([]string, int) {
 		newTime := new(time.Time)
 		*newTime = time.Now()
 		task.startTime = newTime
-		// log.Printf("m.rT.idleTasks %v", m.rT.idleTasks)
-		// log.Println(*task)
 		m.rT.inProcessTasks = append(m.rT.inProcessTasks, task)
-		// log.Printf("m.rT.inProcessTasks %v", m.rT.inProcessTasks)
 		task.state = 1
-		//log.Println(task.fileNames)
 		m.rT.idleTasks = m.rT.idleTasks[1:]
 		return task.fileNames, task.taskId
 	} else {
@@ -166,25 +160,17 @@ func (m *Master) NotifyMapTask(args *NotifyArgs) error {
 			task.endTime = endTime
 			task.state = 2
 			m.mT.doneTasks = append(m.mT.doneTasks, task)
-			//log.Println(m.mT.inProcessTasks)
 			m.mT.inProcessTasks = append(m.mT.inProcessTasks[:i], m.mT.inProcessTasks[i+1:]...)
-			//log.Println(m.mT.inProcessTasks)
-			//log.Println("Add new reduce task")
 			for id := 0; id < m.nReduce; id++ {
 				m.rT.taskList[id].fileNames = append(m.rT.taskList[id].fileNames, fmt.Sprintf("mr-%d-%d", task.taskId, id))
-				// log.Printf("m.rT.taskList[id].fileNames %v", m.rT.taskList[id].fileNames)
 			}
 			break
 		}
 	}
 	if len(m.mT.doneTasks) == len(m.mT.taskList) {
 		for i := range m.rT.taskList {
-			// log.Printf("Print rT tasks%v", task)
 			m.rT.idleTasks = append(m.rT.idleTasks, &m.rT.taskList[i])
-			// log.Printf("idle tasks filenames %v", m.rT.idleTasks[i].fileNames)
-			// log.Printf("taskList tasks filenames %v", m.rT.taskList[i].fileNames)
 		}
-		// log.Printf("idle tasks %v", m.rT.idleTasks)
 		m.state = REDUCE_STATE
 	}
 	return nil
@@ -200,7 +186,6 @@ func (m *Master) NotifyReduceTask(args *NotifyArgs) error {
 			task.state = 2
 			m.rT.doneTasks = append(m.rT.doneTasks, task)
 			_ = copy(m.rT.inProcessTasks[i:], m.rT.inProcessTasks[i+1:])
-			// log.Printf("inproccessTask: %v ", m.rT.inProcessTasks)
 			m.rT.inProcessTasks = m.rT.inProcessTasks[:len(m.rT.inProcessTasks)-1]
 			break
 		}
@@ -218,12 +203,10 @@ func (m *Master) NotifyTask(args *NotifyArgs, reply *NotifyReply) error {
 	switch args.TaskType {
 	case MAP_TASK:
 		{
-			//log.Println("Notify map task")
 			return m.NotifyMapTask(args)
 		}
 	case REDUCE_TASK:
 		{
-			//log.Println("Notify reduce task")
 			return m.NotifyReduceTask(args)
 		}
 	default:
